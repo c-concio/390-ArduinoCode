@@ -50,12 +50,12 @@ bool machine1;
 bool OnOff;
 
 //Database Paths
-String GFS_Temp_Path = "machines/Big_Oven/Temperature";
+String Big_Temp_Path = "machines/Big_Oven/Temperature";
 String Powder_Temp_Path = "machines/Powder_Booth/Temperature";
 String Powder_Hum_Path = "machines/Powder_Booth/Humidity";
-String Powder_Status_Path = "machines/Big_Oven/machineStatus";
-String Powder_Time_On_Path = "machines/Big_Oven/machineStatusTimeOn";
-String Powder_Time_Off_Path = "machines/Big_Oven/machineStatusTimeOff";
+String Big_Status_Path = "machines/Big_Oven/machineStatus";
+String Big_Time_On_Path = "machines/Big_Oven/machineStatusTimeOn";
+String Big_Time_Off_Path = "machines/Big_Oven/machineStatusTimeOff";
 
 
 
@@ -81,8 +81,6 @@ pinMode(Switch_2, OUTPUT); digitalWrite(Switch_2, LOW);
 sensor_t sensor1;
 dht1.temperature().getSensor(&sensor1);
 dht1.humidity().getSensor(&sensor1);
-
-delayMS = sensor1.min_delay / 1000;
  
 Serial.println("- - - We are leaving the setup loop - - - ");
 // wait for MAX chip to stabilize
@@ -115,7 +113,13 @@ void loop() {
 }
 
 void setValueFirebase(String path, int value){
-  Firebase.setInt(path, value);
+  Firebase.set(path, value);
+  delay(500);
+  while(Firebase.failed()){
+    Serial.print("Error Setting value ");
+    Serial.println(path);
+    Firebase.set(path, value);
+    }
 }
 
 
@@ -146,7 +150,7 @@ void getFirebase(){
 
 
 void getsensordata(){
-  
+  dateTime = NTPch.getNTPtime(-5.0, 2);
  //get thermocoupe data
  if(isnan(thermocouple1.readCelsius())) {
     Serial.println("Error Reading Big Oven Temperature. ");
@@ -154,7 +158,7 @@ void getsensordata(){
   else  {
     temp1 = thermocouple1.readCelsius();
     Serial.print("Big Oven Temp: "); Serial.println(temp1);
-    Firebase.setInt("machines/Big_Oven/Temperature", temp1);
+    setValueFirebase(Big_Temp_Path, temp1);
    }
 
 
@@ -168,7 +172,7 @@ void getsensordata(){
   else{
     temp2 = event1.temperature;
     Serial.print(F("Powder Booth Temperature: ")); Serial.print(event1.temperature); Serial.println(F("°C"));
-    Firebase.setInt("machines/Powder_Booth/Temperature", temp2);
+    setValueFirebase(Powder_Temp_Path, temp2);
     }
   
  dht1.humidity().getEvent(&event1);
@@ -179,14 +183,13 @@ void getsensordata(){
  else {
     humidity1 = event1.relative_humidity;
     Serial.print(F("Powder Booth Humidity: ")); Serial.print(event1.relative_humidity); Serial.println(F("%"));
-    Firebase.setInt("machines/Powder_Booth/Humidity", humidity1);
+    setValueFirebase(Powder_Hum_Path, humidity1);
 
   }
   
  //get machine data
  machine1 = bool(digitalRead(machine_sens1));
  Serial.print("Big Oven Status: ");
- dateTime = NTPch.getNTPtime(-5.0, 2);
  
  if(machine1 == true){
    Serial.println("On");
@@ -194,7 +197,8 @@ void getsensordata(){
    Firebase.setInt(path, temp1);
 
    if(machine1 != OnOff){
-    Firebase.setInt("machines/Big_Oven/machineStatusTimeOn", dateTime.epochTime);
+    Serial.println("Setting Big Oven Time On. ");
+    setValueFirebase(Big_Time_On_Path, dateTime.epochTime);
     }
 
     
@@ -202,11 +206,12 @@ void getsensordata(){
   else{
     Serial.println("Off");
     if(machine1 != OnOff){
-    Firebase.setInt("machines/Big_Oven/machineStatusTimeOff", dateTime.epochTime);
+    Serial.println("Setting Big Oven Time Off. ");  
+    setValueFirebase(Big_Time_Off_Path, dateTime.epochTime);
     }
     
   }
- Firebase.setBool("machines/Big_Oven/machineStatus", machine1);
- OnOff = machine1;
+setValueFirebase(Big_Status_Path, machine1);
+OnOff = machine1;
 
 }

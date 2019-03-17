@@ -9,30 +9,36 @@
 //Timestamp
 NTPtime NTPch("ch.pool.ntp.org");
 strDateTime dateTime;
+
 //Wifi Settings
 const char* WIFI_SSID = "BELL897";
 const char* WIFI_PASSWORD = "923AF6F1";
+
 //FireBase Settings
 const char* FIREBASE_HOST = "coen390-52424.firebaseio.com";
 const char* FIREBASE_AUTH = "rtsrO8xdfZjJybFKltxYTYItkxKDYhAum0h74XKD";
 
-//Thermocouples  
-// Oven Temp sensor 1 
+//Thermocouple Oven  
 #define thermoDO1 D8
 #define thermoCS1 D7
 #define thermoCLK1 D6
 MAX6675 thermocouple1(thermoCLK1, thermoCS1, thermoDO1);
+
 //DHT 22 sensors (temp+humidity)
 #define DHTTYPE1    DHT22
 #define DHTPIN1 D5
+
 //Logic sensors
 #define machine_sens1 D0
+
 //RELAY
 #define Switch_1 D1
 #define Switch_2 D2
 DHT_Unified dht1(DHTPIN1, DHTTYPE1);
 uint32_t delayMS;
 
+
+//Global Variables
 //thermocouple temps
 int temp1;
 //dht22 temp
@@ -41,8 +47,15 @@ int temp2;
 int humidity1;
 //Logic sensor (On/Off)
 bool machine1;
-
 bool OnOff;
+
+//Database Paths
+String GFS_Temp_Path = "machines/GFS_Oven/Temperature";
+String Liquid_Temp_Path = "machines/Liquid_Booth/Temperature";
+String Liquid_Hum_Path = "machines/Liquid_Booth/Humidity";
+String GFS_Status_Path = "machines/GFS_Oven/machineStatus";
+String GFS_Time_On_Path = "machines/GFS_Oven/machineStatusTimeOn";
+String GFS_Time_Off_Path = "machines/GFS_Oven/machineStatusTimeOff";
 
 
 
@@ -68,8 +81,6 @@ pinMode(Switch_2, OUTPUT); digitalWrite(Switch_2, LOW);
 sensor_t sensor1;
 dht1.temperature().getSensor(&sensor1);
 dht1.humidity().getSensor(&sensor1);
-
-delayMS = sensor1.min_delay / 1000;
  
 Serial.println("- - - We are leaving the setup loop - - - ");
 // wait for MAX chip to stabilize
@@ -81,14 +92,12 @@ delay(1000);
 
 
 void loop() {
+ // No switches on this one for now getFirebase();
+ //If we do get switches, call them Switch_3 & Switch_4
   getFirebase();
   getsensordata();
 
 }
-
-
-
-
 
   void connectWiFi() {
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -103,7 +112,18 @@ void loop() {
   
 }
 
-   void getFirebase(){
+void setValueFirebase(String path, int value){
+  Firebase.set(path, value);
+  delay(500);
+  while(Firebase.failed()){
+    Serial.print("Error Setting value ");
+    Serial.println(path);
+    Firebase.set(path, value);
+    }
+}
+
+
+void getFirebase(){
      if(Firebase.getBool("Control_Switches/Switch_1"))
    {
       Serial.println("Switch_1 On");
@@ -129,16 +149,16 @@ void loop() {
  }
 
 
- void getsensordata(){
+void getsensordata(){
   
  //get thermocoupe data
  if(isnan(thermocouple1.readCelsius())) {
-    Serial.println("Error Reading Thermocouple1");
+    Serial.println("Error Reading GFS Oven Temp");
   }
   else  {
     temp1 = thermocouple1.readCelsius();
-    Serial.print("GFS_Oven Thermocouple 1 : "); Serial.println(temp1);
-    Firebase.setInt("machines/GFS_Oven/Temperature", temp1);
+    Serial.print("GFS_Oven Temp : "); Serial.println(temp1);
+    setValueFirebase(GFS_Temp_Path, temp1);
    }
 
 
@@ -147,38 +167,38 @@ void loop() {
  dht1.temperature().getEvent(&event1);
  
  if (isnan(event1.temperature)) {
-    Serial.println(F("Error reading temperature 1!"));
+    Serial.println(F("Error reading Liquid Booth Temp."));
   }
   else{
     temp2 = event1.temperature;
-    Serial.print(F("Liquid Paint Booth Temperature dht 1: ")); Serial.print(event1.temperature); Serial.println(F("°C"));
-    Firebase.setInt("machines/Liquid_Booth/Temperature", temp2);
+    Serial.print(F("Liquid Paint Booth Temperature: ")); Serial.print(event1.temperature); Serial.println(F("°C"));
+    setValueFirebase(Liquid_Temp_Path, temp2);
     }
   
  dht1.humidity().getEvent(&event1);
 
  if (isnan(event1.relative_humidity)) {
-    Serial.println(F("Error reading humidity!"));
+    Serial.println(F("Error reading Liquid Booth humidity!"));
  }
  else {
     humidity1 = event1.relative_humidity;
-    Serial.print(F("Liquid Booth Humidity dht 1: ")); Serial.print(event1.relative_humidity); Serial.println(F("%"));
-    Firebase.setInt("machines/Liquid_Booth/Humidity", humidity1);
-
+    Serial.print(F("Liquid Booth Humidity: ")); Serial.print(event1.relative_humidity); Serial.println(F("%"));
+    setValueFirebase(Liquid_Hum_Path, humidity1);
   }
   
  //get machine data
  machine1 = bool(digitalRead(machine_sens1));
- Serial.print("Machine_sensor_1 : ");
+ Serial.print("GFS Oven Status: ");
  dateTime = NTPch.getNTPtime(-5.0, 2);
  
  if(machine1 == true){
    Serial.println("On");
-   const String path = "Machine/GFS_Oven/Temperatures/"+dateTime.epochTime;
-   Firebase.setInt(path, temp1);
+   const String path = "Machine/GFS_Oven/Temperatures/"+String(dateTime.epochTime);
+   setValueFirebase(path, temp1);
 
    if(machine1 != OnOff){
-    Firebase.setInt("machines/GFS_Oven/machineStatusTimeOn", dateTime.epochTime);
+    Serial.println("Setting GFS Oven Time On. ");
+    setValueFirebase(GFS_Time_On_Path, dateTime.epochTime);
     }
 
     
@@ -186,17 +206,12 @@ void loop() {
   else{
     Serial.println("Off");
     if(machine1 != OnOff){
-    Firebase.setInt("machines/GFS_Oven/machineStatusTimeOff", dateTime.epochTime);
+    Serial.println("Setting GFS Oven Time Off. ");  
+    setValueFirebase(GFS_Time_Off_Path, dateTime.epochTime);
     }
     
   }
- Firebase.setBool("machines/GFS_Oven/machineStatus", machine1);
+ setValueFirebase(GFS_Status_Path, machine1);
  OnOff = machine1;
 
-//delay to buffer
- delay(delayMS);
- if(delayMS<500) {
- delay(500-delayMS);
- }
-  
 }
