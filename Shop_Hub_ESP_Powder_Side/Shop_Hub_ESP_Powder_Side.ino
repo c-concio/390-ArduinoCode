@@ -9,30 +9,36 @@
 //Timestamp
 NTPtime NTPch("ch.pool.ntp.org");
 strDateTime dateTime;
+
 //Wifi Settings
 const char* WIFI_SSID = "BELL897";
 const char* WIFI_PASSWORD = "923AF6F1";
+
 //FireBase Settings
 const char* FIREBASE_HOST = "coen390-52424.firebaseio.com";
 const char* FIREBASE_AUTH = "rtsrO8xdfZjJybFKltxYTYItkxKDYhAum0h74XKD";
 
-//Thermocouples  
-// Oven Temp sensor 1 
+//Thermocouple Oven  
 #define thermoDO1 D8
 #define thermoCS1 D7
 #define thermoCLK1 D6
 MAX6675 thermocouple1(thermoCLK1, thermoCS1, thermoDO1);
+
 //DHT 22 sensors (temp+humidity)
 #define DHTTYPE1    DHT22
 #define DHTPIN1 D5
+
 //Logic sensors
 #define machine_sens1 D0
+
 //RELAY
 #define Switch_1 D1
 #define Switch_2 D2
 DHT_Unified dht1(DHTPIN1, DHTTYPE1);
 uint32_t delayMS;
 
+
+//Global Variables
 //thermocouple temps
 int temp1;
 //dht22 temp
@@ -41,8 +47,15 @@ int temp2;
 int humidity1;
 //Logic sensor (On/Off)
 bool machine1;
-
 bool OnOff;
+
+//Database Paths
+String GFS_Temp_Path = "machines/Big_Oven/Temperature";
+String Powder_Temp_Path = "machines/Powder_Booth/Temperature";
+String Powder_Hum_Path = "machines/Powder_Booth/Humidity";
+String Powder_Status_Path = "machines/Big_Oven/machineStatus";
+String Powder_Time_On_Path = "machines/Big_Oven/machineStatusTimeOn";
+String Powder_Time_Off_Path = "machines/Big_Oven/machineStatusTimeOff";
 
 
 
@@ -82,13 +95,11 @@ delay(1000);
 
 void loop() {
  // No switches on this one for now getFirebase();
+ //If we do get switches, call them Switch_3 & Switch_4
+ //getFirebase();
   getsensordata();
 
 }
-
-
-
-
 
   void connectWiFi() {
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -103,7 +114,12 @@ void loop() {
   
 }
 
-   void getFirebase(){
+void setValueFirebase(String path, int value){
+  Firebase.setInt(path, value);
+}
+
+
+void getFirebase(){
      if(Firebase.getBool("Control_Switches/Switch_3"))
    {
       Serial.println("Switch_3 On");
@@ -129,15 +145,15 @@ void loop() {
  }
 
 
- void getsensordata(){
+void getsensordata(){
   
  //get thermocoupe data
  if(isnan(thermocouple1.readCelsius())) {
-    Serial.println("Error Reading Thermocouple1");
+    Serial.println("Error Reading Big Oven Temperature. ");
   }
   else  {
     temp1 = thermocouple1.readCelsius();
-    Serial.print("GFS_Oven Thermocouple 1 : "); Serial.println(temp1);
+    Serial.print("Big Oven Temp: "); Serial.println(temp1);
     Firebase.setInt("machines/Big_Oven/Temperature", temp1);
    }
 
@@ -147,29 +163,29 @@ void loop() {
  dht1.temperature().getEvent(&event1);
  
  if (isnan(event1.temperature)) {
-    Serial.println(F("Error reading temperature 1!"));
+    Serial.println(F("Error reading Powder Booth Temp"));
   }
   else{
     temp2 = event1.temperature;
-    Serial.print(F("Powder Paint Booth Temperature dht 1: ")); Serial.print(event1.temperature); Serial.println(F("°C"));
+    Serial.print(F("Powder Booth Temperature: ")); Serial.print(event1.temperature); Serial.println(F("°C"));
     Firebase.setInt("machines/Powder_Booth/Temperature", temp2);
     }
   
  dht1.humidity().getEvent(&event1);
 
  if (isnan(event1.relative_humidity)) {
-    Serial.println(F("Error reading humidity!"));
+    Serial.println(F("Error reading Powder Booth humidity!"));
  }
  else {
     humidity1 = event1.relative_humidity;
-    Serial.print(F("Powder Booth Humidity dht 1: ")); Serial.print(event1.relative_humidity); Serial.println(F("%"));
+    Serial.print(F("Powder Booth Humidity: ")); Serial.print(event1.relative_humidity); Serial.println(F("%"));
     Firebase.setInt("machines/Powder_Booth/Humidity", humidity1);
 
   }
   
  //get machine data
  machine1 = bool(digitalRead(machine_sens1));
- Serial.print("Machine_sensor_1 : ");
+ Serial.print("Big Oven Status: ");
  dateTime = NTPch.getNTPtime(-5.0, 2);
  
  if(machine1 == true){
@@ -193,10 +209,4 @@ void loop() {
  Firebase.setBool("machines/Big_Oven/machineStatus", machine1);
  OnOff = machine1;
 
-//delay to buffer
- delay(delayMS);
- if(delayMS<500) {
- delay(500-delayMS);
- }
-  
 }
