@@ -1,3 +1,6 @@
+//390-Arduino Code - Liquid Side
+//Chris Torossian
+
 #include "max6675.h"
 #include <DHT.h>
 #include <DHT_U.h>
@@ -113,12 +116,14 @@ void loop() {
 }
 
 void setValueFirebase(String path, int value){
+  int trial = 1; 
   Firebase.set(path, value);
   delay(500);
-  while(Firebase.failed()){
+  while(Firebase.failed() && trial < 4){
     Serial.print("Error Setting value ");
     Serial.println(path);
     Firebase.set(path, value);
+    trial++;
     }
 }
 
