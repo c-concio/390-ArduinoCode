@@ -155,7 +155,9 @@ void getFirebase(){
 
 
 void getsensordata(){
-  
+  delay(200);
+  dateTime = NTPch.getNTPtime(-5.0, 2);
+  delay(100);
  //get thermocoupe data
  if(isnan(thermocouple1.readCelsius())) {
     Serial.println("Error Reading GFS Oven Temp");
@@ -194,11 +196,10 @@ void getsensordata(){
  //get machine data
  machine1 = bool(digitalRead(machine_sens1));
  Serial.print("GFS Oven Status: ");
- dateTime = NTPch.getNTPtime(-5.0, 2);
  
  if(machine1 == true){
    Serial.println("On");
-   const String path = "Machine/GFS_Oven/Temperatures/"+String(dateTime.epochTime);
+   const String path = "machines/GFS_Oven/Temperatures/"+String(dateTime.epochTime);
    setValueFirebase(path, temp1);
 
    if(machine1 != OnOff){

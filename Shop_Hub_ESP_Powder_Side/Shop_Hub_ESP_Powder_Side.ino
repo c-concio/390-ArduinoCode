@@ -155,7 +155,9 @@ void getFirebase(){
 
 
 void getsensordata(){
+  delay(200);
   dateTime = NTPch.getNTPtime(-5.0, 2);
+  delay(100);
  //get thermocoupe data
  if(isnan(thermocouple1.readCelsius())) {
     Serial.println("Error Reading Big Oven Temperature. ");
@@ -198,7 +200,7 @@ void getsensordata(){
  
  if(machine1 == true){
    Serial.println("On");
-   const String path = "Machine/Big_Oven/Temperatures/"+dateTime.epochTime;
+   const String path = "machines/Big_Oven/Temperatures/"+String(dateTime.epochTime);
    Firebase.setInt(path, temp1);
 
    if(machine1 != OnOff){
