@@ -5,62 +5,56 @@
 #include <DHT.h>
 #include <DHT_U.h>
 #include <FirebaseArduino.h>
-#include <NTPtimeESP.h>
 #include <ESP8266WiFi.h>
 #define DEBUG_ON
 
-//Timestamp
-NTPtime NTPch("ch.pool.ntp.org");
-strDateTime dateTime;
-
-//Wifi Settings
+//--------Wifi Settings
 const char* WIFI_SSID = "BELL897";
 const char* WIFI_PASSWORD = "923AF6F1";
 
-//FireBase Settings
+//--------FireBase Settings
 const char* FIREBASE_HOST = "coen390-52424.firebaseio.com";
 const char* FIREBASE_AUTH = "rtsrO8xdfZjJybFKltxYTYItkxKDYhAum0h74XKD";
 
-//Thermocouple Oven  
+//--------Thermocouple Oven  
 #define thermoDO1 D8
 #define thermoCS1 D7
 #define thermoCLK1 D6
 MAX6675 thermocouple1(thermoCLK1, thermoCS1, thermoDO1);
 
-//DHT 22 sensors (temp+humidity)
+//-------DHT 22 sensors (temp+humidity)
 #define DHTTYPE1    DHT22
 #define DHTPIN1 D5
 
-//Logic sensors
+//-------Logic sensors
 #define machine_sens1 D0
 
-//RELAY
+//-------RELAY
 #define Switch_1 D1
 #define Switch_2 D2
 DHT_Unified dht1(DHTPIN1, DHTTYPE1);
 uint32_t delayMS;
 
 
-//Global Variables
-//thermocouple temps
+//-----------------------------------Global Variables
+//-----------thermocouple temps
 int temp1;
-//dht22 temp
+//--------------dht22 temp
 int temp2;
-//dht22 humidity
+//-------------dht22 humidity
 int humidity1;
-//Logic sensor (On/Off)
+//-----------Logic sensor (On/Off)
 bool machine1;
 bool OnOff;
 
-//Database Paths
+//---------Database Paths
 String Big_Temp_Path = "machines/Big_Oven/temperature";
 String Powder_Temp_Path = "machines/Powder_Booth/temperature";
 String Powder_Hum_Path = "machines/Powder_Booth/humidity";
 String Big_Status_Path = "machines/Big_Oven/machineStatus";
-String Big_Time_On_Path = "machines/Big_Oven/machineStatusTimeOn";
-String Big_Time_Off_Path = "machines/Big_Oven/machineStatusTimeOff";
 
 
+//---------------------------------Setup-----------------------------------//
 
 void setup() {
   
@@ -92,7 +86,7 @@ delay(1000);
 
 }
 
-
+//------------------------Loop--------------------------------//
 
 void loop() {
  // No switches on this one for now getFirebase();
@@ -101,6 +95,8 @@ void loop() {
   getsensordata();
 
 }
+
+//------------------------Connect Wifi--------------------------------//
 
   void connectWiFi() {
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -115,6 +111,8 @@ void loop() {
   
 }
 
+//-------------------------SetValueToDatabse-------------------------------//
+
 void setValueFirebase(String path, int value){
   int trial = 1; 
   Firebase.set(path, value);
@@ -127,6 +125,7 @@ void setValueFirebase(String path, int value){
     }
 }
 
+//------------------------getFirebaseData--------------------------------//
 
 void getFirebase(){
      if(Firebase.getBool("Control_Switches/Switch_3"))
@@ -153,12 +152,14 @@ void getFirebase(){
     
  }
 
+//-----------------------------GetSensorData---------------------------//
 
 void getsensordata(){
+  
   delay(200);
-  dateTime = NTPch.getNTPtime(-5.0, 2);
-  delay(100);
- //get thermocoupe data
+ 
+ //------------------get thermocoupe data
+ 
  if(isnan(thermocouple1.readCelsius())) {
     Serial.println("Error Reading Big Oven Temperature. ");
   }
@@ -169,7 +170,8 @@ void getsensordata(){
    }
 
 
-  //get dht data
+  //------------------get dht data
+  
  sensors_event_t event1;
  dht1.temperature().getEvent(&event1);
  
@@ -194,30 +196,18 @@ void getsensordata(){
 
   }
   
- //get machine data
+ //--------------------get machine data
+ 
  machine1 = bool(digitalRead(machine_sens1));
  Serial.print("Big Oven Status: ");
  
  if(machine1 == true){
-   Serial.println("On");
-   const String path = "machines/Big_Oven/temperatures/"+String(dateTime.epochTime);
-   Firebase.setInt(path, temp1);
-
-   if(machine1 != OnOff){
-    Serial.println("Setting Big Oven Time On. ");
-    setValueFirebase(Big_Time_On_Path, dateTime.epochTime);
-    }
-
-    
+   Serial.println("On");    
   }
   else{
     Serial.println("Off");
-    if(machine1 != OnOff){
-    Serial.println("Setting Big Oven Time Off. ");  
-    setValueFirebase(Big_Time_Off_Path, dateTime.epochTime);
-    }
-    
   }
+  
 setValueFirebase(Big_Status_Path, machine1);
 OnOff = machine1;
 
