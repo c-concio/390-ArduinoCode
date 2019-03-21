@@ -53,9 +53,9 @@ bool machine1;
 bool OnOff;
 
 //Database Paths
-String Big_Temp_Path = "machines/Big_Oven/Temperature";
-String Powder_Temp_Path = "machines/Powder_Booth/Temperature";
-String Powder_Hum_Path = "machines/Powder_Booth/Humidity";
+String Big_Temp_Path = "machines/Big_Oven/temperature";
+String Powder_Temp_Path = "machines/Powder_Booth/temperature";
+String Powder_Hum_Path = "machines/Powder_Booth/humidity";
 String Big_Status_Path = "machines/Big_Oven/machineStatus";
 String Big_Time_On_Path = "machines/Big_Oven/machineStatusTimeOn";
 String Big_Time_Off_Path = "machines/Big_Oven/machineStatusTimeOff";
@@ -200,7 +200,7 @@ void getsensordata(){
  
  if(machine1 == true){
    Serial.println("On");
-   const String path = "machines/Big_Oven/Temperatures/"+String(dateTime.epochTime);
+   const String path = "machines/Big_Oven/temperatures/"+String(dateTime.epochTime);
    Firebase.setInt(path, temp1);
 
    if(machine1 != OnOff){

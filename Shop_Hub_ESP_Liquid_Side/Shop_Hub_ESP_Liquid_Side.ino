@@ -53,9 +53,9 @@ bool machine1;
 bool OnOff;
 
 //Database Paths
-String GFS_Temp_Path = "machines/GFS_Oven/Temperature";
-String Liquid_Temp_Path = "machines/Liquid_Booth/Temperature";
-String Liquid_Hum_Path = "machines/Liquid_Booth/Humidity";
+String GFS_Temp_Path = "machines/GFS_Oven/temperature";
+String Liquid_Temp_Path = "machines/Liquid_Booth/temperature";
+String Liquid_Hum_Path = "machines/Liquid_Booth/humidity";
 String GFS_Status_Path = "machines/GFS_Oven/machineStatus";
 String GFS_Time_On_Path = "machines/GFS_Oven/machineStatusTimeOn";
 String GFS_Time_Off_Path = "machines/GFS_Oven/machineStatusTimeOff";
@@ -199,7 +199,7 @@ void getsensordata(){
  
  if(machine1 == true){
    Serial.println("On");
-   const String path = "machines/GFS_Oven/Temperatures/"+String(dateTime.epochTime);
+   const String path = "machines/GFS_Oven/temperatures/"+String(dateTime.epochTime);
    setValueFirebase(path, temp1);
 
    if(machine1 != OnOff){
