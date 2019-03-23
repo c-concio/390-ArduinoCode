@@ -58,28 +58,34 @@ String Big_Status_Path = "machines/Big_Oven/machineStatus";
 void setup() {
   
 Serial.begin(9600);
+
 Serial.println("- - - System On Bitches - - -");
-Serial.println("- - - We are in the setup loop - - -");
+Serial.println("- - - The setup loop - - -");
+
 connectWiFi();
+
 Serial.println("Connecting to Firebase ");
 Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+
 dht1.begin();
+
 temp1 = 0;
 temp2 = 0;
 humidity1 = 0;
-
 pinMode(machine_sens1, INPUT);
 machine1 = bool(digitalRead(machine_sens1));
 pinMode(Switch_1, OUTPUT); digitalWrite(Switch_1, LOW);
 pinMode(Switch_2, OUTPUT); digitalWrite(Switch_2, LOW);
+//D5 is the power for DHT-22
 pinMode(D5, OUTPUT); digitalWrite(D5, HIGH);
+
 sensor_t sensor1;
 dht1.temperature().getSensor(&sensor1);
 dht1.humidity().getSensor(&sensor1);
  
-Serial.println("- - - We are leaving the setup loop - - - ");
-// wait for MAX chip to stabilize
+Serial.println("- - - Leaving the setup loop - - - ");
 
+// wait for MAX chip to stabilize
 delay(1000);
 
 }
@@ -123,9 +129,9 @@ void setValueFirebase(String path, int value){
     }
 }
 
-void setValueFirebase(String path, bool value){
+void setBoolFirebase(String path, bool value){
   int trial = 1; 
-  Firebase.set(path, value);
+  Firebase.setBool(path, value);
   delay(500);
   while(Firebase.failed() && trial < 4){
     Serial.print("Error Setting value ");
@@ -214,11 +220,11 @@ void getsensordata(){
  
  if(machine1 == true){
    Serial.println("On");   
-   setValueFirebase(Big_Status_Path, true); 
+   setBoolFirebase(Big_Status_Path, true); 
   }
   else{
     Serial.println("Off");
-    setValueFirebase(Big_Status_Path, false);
+    setBoolFirebase(Big_Status_Path, false);
   }
   
 }

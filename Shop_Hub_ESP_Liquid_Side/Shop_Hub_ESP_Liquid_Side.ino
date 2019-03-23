@@ -46,7 +46,6 @@ int temp2;
 int humidity1;
 //----------Logic sensor (On/Off)
 bool machine1;
-bool OnOff;
 
 //-----------Database Paths
 String GFS_Temp_Path = "machines/GFS_Oven/temperature";
@@ -60,21 +59,25 @@ String GFS_Status_Path = "machines/GFS_Oven/machineStatus";
 void setup() {
   
 Serial.begin(9600);
+
 Serial.println("- - - System On Bitches - - -");
 Serial.println("- - - We are in the setup loop - - -");
+
 connectWiFi();
+
 Serial.println("Connecting to Firebase ");
 Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+
 dht1.begin();
+
 temp1 = 0;
 temp2 = 0;
 humidity1 = 0;
-OnOff = true;
-
 pinMode(machine_sens1, INPUT);
 machine1 = bool(digitalRead(machine_sens1));
 pinMode(Switch_1, OUTPUT); digitalWrite(Switch_1, LOW);
 pinMode(Switch_2, OUTPUT); digitalWrite(Switch_2, LOW);
+//Using this output as a power source for the DHT-22 Sensor
 pinMode(D5, OUTPUT); digitalWrite(D5, HIGH);
 
 sensor_t sensor1;
@@ -113,7 +116,7 @@ void loop() {
   
 }
 
-//-------------------------SetValueToDatabse-------------------------------//
+//-------------------------SetValueToDatabse---SetBoolFirebase----------------------------//
 
 void setValueFirebase(String path, int value){
   int trial = 1; 
@@ -126,6 +129,19 @@ void setValueFirebase(String path, int value){
     trial++;
     }
 }
+
+void setBoolFirebase(String path, bool value){
+  int trial = 1; 
+  Firebase.setBool(path, value);
+  delay(500);
+  while(Firebase.failed() && trial < 4){
+    Serial.print("Error Setting value ");
+    Serial.println(path);
+    Firebase.set(path, value);
+    trial++;
+    }
+}
+
 
 //------------------------getFirebaseData--------------------------------//
 
@@ -202,12 +218,10 @@ void getsensordata(){
  
  if(machine1 == true){
    Serial.println("On");
+   setBoolFirebase(GFS_Status_Path, true);
   }
   else{
     Serial.println("Off");
+    setBoolFirebase(GFS_Status_Path, false);
   }
-  
- setValueFirebase(GFS_Status_Path, machine1);
- OnOff = machine1;
-
 }
