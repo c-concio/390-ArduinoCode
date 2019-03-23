@@ -25,14 +25,14 @@ MAX6675 thermocouple1(thermoCLK1, thermoCS1, thermoDO1);
 
 //------------DHT 22 sensors (temp+humidity)
 #define DHTTYPE1    DHT22
-#define DHTPIN1 D5
+#define DHTPIN1 D1
 
 //------------Logic sensors
 #define machine_sens1 D0
 
 //-----------RELAY
-#define Switch_1 D1
-#define Switch_2 D2
+#define Switch_1 D2
+#define Switch_2 D3
 DHT_Unified dht1(DHTPIN1, DHTTYPE1);
 uint32_t delayMS;
 
@@ -75,6 +75,7 @@ pinMode(machine_sens1, INPUT);
 machine1 = bool(digitalRead(machine_sens1));
 pinMode(Switch_1, OUTPUT); digitalWrite(Switch_1, LOW);
 pinMode(Switch_2, OUTPUT); digitalWrite(Switch_2, LOW);
+pinMode(D5, OUTPUT); digitalWrite(D5, HIGH);
 
 sensor_t sensor1;
 dht1.temperature().getSensor(&sensor1);
