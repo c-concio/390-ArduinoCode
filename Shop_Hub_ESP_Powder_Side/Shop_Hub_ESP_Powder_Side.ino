@@ -76,7 +76,7 @@ pinMode(machine_sens1, INPUT);
 machine1 = bool(digitalRead(machine_sens1));
 pinMode(Switch_1, OUTPUT); digitalWrite(Switch_1, LOW);
 pinMode(Switch_2, OUTPUT); digitalWrite(Switch_2, LOW);
-//D5 is the power for DHT-22
+//D5 is the power for MAX
 pinMode(D5, OUTPUT); digitalWrite(D5, HIGH);
 
 sensor_t sensor1;
@@ -173,7 +173,7 @@ void getFirebase(){
 
 void getsensordata(){
   
-  delay(200);
+  delay(2000);
  
  //------------------get thermocoupe data
  

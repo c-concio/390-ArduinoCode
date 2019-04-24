@@ -10,8 +10,8 @@
 
 
 //-----------Wifi Settings
-const char* WIFI_SSID = "BELL897";
-const char* WIFI_PASSWORD = "923AF6F1";
+const char* WIFI_SSID = "Oo oo oo";
+const char* WIFI_PASSWORD = "Jeep5114";
 
 //----------FireBase Settings
 const char* FIREBASE_HOST = "coen390-52424.firebaseio.com";
@@ -25,14 +25,16 @@ MAX6675 thermocouple1(thermoCLK1, thermoCS1, thermoDO1);
 
 //------------DHT 22 sensors (temp+humidity)
 #define DHTTYPE1    DHT22
-#define DHTPIN1 D1
+#define DHTPIN1 D4
 
 //------------Logic sensors
-#define machine_sens1 D0
+#define machine_sens1 D1
 
 //-----------RELAY
 #define Switch_1 D2
 #define Switch_2 D3
+//---SEND LED
+#define sendLED D0
 DHT_Unified dht1(DHTPIN1, DHTTYPE1);
 uint32_t delayMS;
 
@@ -79,6 +81,7 @@ pinMode(Switch_1, OUTPUT); digitalWrite(Switch_1, LOW);
 pinMode(Switch_2, OUTPUT); digitalWrite(Switch_2, LOW);
 //Using this output as a power source for the DHT-22 Sensor
 pinMode(D5, OUTPUT); digitalWrite(D5, HIGH);
+pinMode(sendLED, OUTPUT); digitalWrite(sendLED, LOW);
 
 sensor_t sensor1;
 dht1.temperature().getSensor(&sensor1);
@@ -108,6 +111,9 @@ void loop() {
   Serial.print("connecting");
   while (WiFi.status() != WL_CONNECTED) {
     Serial.print(".");
+    digitalWrite(sendLED, HIGH);
+    delay(200);
+    digitalWrite(sendLED, LOW);
     delay(500);
   }
   Serial.println();
@@ -121,6 +127,9 @@ void loop() {
 void setValueFirebase(String path, int value){
   int trial = 1; 
   Firebase.set(path, value);
+  digitalWrite(sendLED, HIGH);
+  delay(200);
+  digitalWrite(sendLED, LOW);
   delay(500);
   while(Firebase.failed() && trial < 4){
     Serial.print("Error Setting value ");
@@ -128,11 +137,15 @@ void setValueFirebase(String path, int value){
     Firebase.set(path, value);
     trial++;
     }
+    getFirebase();
 }
 
 void setBoolFirebase(String path, bool value){
   int trial = 1; 
   Firebase.setBool(path, value);
+  digitalWrite(sendLED, HIGH);
+  delay(200);
+  digitalWrite(sendLED, LOW);
   delay(500);
   while(Firebase.failed() && trial < 4){
     Serial.print("Error Setting value ");
@@ -140,13 +153,18 @@ void setBoolFirebase(String path, bool value){
     Firebase.set(path, value);
     trial++;
     }
+    getFirebase();
 }
 
 
 //------------------------getFirebaseData--------------------------------//
 
 void getFirebase(){
-     if(Firebase.getBool("Control_Switches/Switch_1"))
+  digitalWrite(sendLED, HIGH);
+  delay(100);
+  digitalWrite(sendLED, LOW);
+  delay(100);
+     if(Firebase.getBool("cDevices/Switch 1/cDeviceStatus"))
    {
       Serial.println("Switch_1 On");
       digitalWrite(Switch_1, HIGH);
@@ -156,8 +174,11 @@ void getFirebase(){
       Serial.println("Switch_1 Off");
       digitalWrite(Switch_1, LOW);
    }
-
-   if(Firebase.getBool("Control_Switches/Switch_2"))
+  digitalWrite(sendLED, HIGH);
+  delay(100);
+  digitalWrite(sendLED, LOW);
+  delay(100);
+   if(Firebase.getBool("cDevices/Switch 2/cDeviceStatus"))
    {
       Serial.println("Switch_2 On");
       digitalWrite(Switch_2, HIGH);
@@ -173,11 +194,10 @@ void getFirebase(){
 //-----------------------------GetSensorData---------------------------//
 
 void getsensordata(){
-  delay(200);
  
  //------------------get thermocoupe data
  
- if(isnan(thermocouple1.readCelsius())) {
+ if(isnan(thermocouple1.readFahrenheit())) {
     Serial.println("Error Reading GFS Oven Temp");
   }
   else  {
